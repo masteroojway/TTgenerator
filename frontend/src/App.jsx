@@ -132,23 +132,44 @@ useEffect(() => {
   };
 
   const addCourseFromSearch = (searchResult, selectedSections) => {
-    if (selectedSections.length === 0) return;
+  if (selectedSections.length === 0) return;
 
-    const slots = selectedSections.map(section => parseDaysHours(section.days_hr));
-    
-    const newCourse = {
-      id: Date.now(),
-      code: searchResult.course_no,
-      title: searchResult.course_title,
-      slots: slots,
-      sections: selectedSections // Store section info for reference
-    };
-
-    setCourses(prev => [...prev, newCourse]);
-    setShowCourseSearch(false);
-    setSearchQuery('');
-    setSearchResults([]);
+  const grouped = {
+    L: [],
+    T: [],
+    P: []
   };
+
+  // Group by stat
+  selectedSections.forEach(section => {
+    if (grouped[section.stat]) {
+      grouped[section.stat].push(section);
+    }
+  });
+
+  const courseEntries = [];
+
+  Object.entries(grouped).forEach(([stat, sections]) => {
+    if (sections.length === 0) return;
+
+    const statLabel = stat === 'L' ? 'Lecture' : stat === 'T' ? 'Tutorial' : 'Practical';
+
+    courseEntries.push({
+      id: Date.now() + Math.random(), // unique ID
+      code: `${searchResult.course_no} (${statLabel})`,
+      title: searchResult.course_title,
+      slots: sections.map(sec => parseDaysHours(sec.days_hr)), // each section is a slot option
+      sections: sections // keep reference
+    });
+  });
+
+  setCourses(prev => [...prev, ...courseEntries]);
+  setShowCourseSearch(false);
+  setSearchQuery('');
+  setSearchResults([]);
+};
+
+
 
   const CourseSearchModal = () => {
     const [selectedSections, setSelectedSections] = useState({});
