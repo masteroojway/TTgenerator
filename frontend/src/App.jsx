@@ -153,13 +153,13 @@ useEffect(() => {
   const CourseSearchModal = () => {
     const [selectedSections, setSelectedSections] = useState({});
 
-    const toggleSectionSelection = (courseKey, sectionIndex, section) => {
-      const key = `${courseKey}_${sectionIndex}`;
+    const toggleSectionSelection = (courseKey, sectionKey, section) => {
       setSelectedSections(prev => ({
         ...prev,
-        [key]: prev[key] ? null : section
+        [sectionKey]: prev[sectionKey] ? null : section
       }));
     };
+
 
     const getSelectedSectionsForCourse = (courseKey) => {
       return Object.entries(selectedSections)
