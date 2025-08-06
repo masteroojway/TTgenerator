@@ -5,47 +5,46 @@ const TimetableGenerator = () => {
   // Sample course data - in a real app, this would come from your JSON file
   const [availableCourses, setAvailableCourses] = useState([]);
 
-useEffect(() => {
-  const fetchAndGroupCourses = async () => {
-    try {
-      const res = await fetch('/Timetable.json');
-      const data = await res.json();
-      const rawCourses = data.courses;
+  useEffect(() => {
+    const fetchAndGroupCourses = async () => {
+      try {
+        const res = await fetch('/Timetable.json');
+        const data = await res.json();
+        const rawCourses = data.courses;
 
-      const grouped = {};
+        const grouped = {};
 
-      rawCourses.forEach(entry => {
-        const key = `${entry.course_no}__${entry.course_title}`;
-        const stat = entry.stat;
+        rawCourses.forEach(entry => {
+          const key = `${entry.course_no}__${entry.course_title}`;
+          const stat = entry.stat;
 
-        if (!grouped[key]) {
-          grouped[key] = {
-            course_no: entry.course_no,
-            course_title: entry.course_title,
-            sections: [] // now we store each stat type as a separate group
-          };
-        }
+          if (!grouped[key]) {
+            grouped[key] = {
+              course_no: entry.course_no,
+              course_title: entry.course_title,
+              sections: [] // now we store each stat type as a separate group
+            };
+          }
 
-        // Each block of same stat is treated as a separate option
-        grouped[key].sections.push({
-          stat: stat,
-          sections: entry.sections.map(section => ({
-            ...section,
-            stat
-          }))
+          // Each block of same stat is treated as a separate option
+          grouped[key].sections.push({
+            stat: stat,
+            sections: entry.sections.map(section => ({
+              ...section,
+              stat
+            }))
+          });
         });
-      });
 
-      // Now grouped[key].sections is an array of { stat, sections[] }
-      setAvailableCourses(Object.values(grouped));
-    } catch (err) {
-      console.error('Failed to load Timetable.json:', err);
-    }
-  };
+        // Now grouped[key].sections is an array of { stat, sections[] }
+        setAvailableCourses(Object.values(grouped));
+      } catch (err) {
+        console.error('Failed to load Timetable.json:', err);
+      }
+    };
 
-  fetchAndGroupCourses();
-}, []);
-
+    fetchAndGroupCourses();
+  }, []);
 
   const [courses, setCourses] = useState([]);
   const [selectedCourses, setSelectedCourses] = useState(new Set());
@@ -139,44 +138,42 @@ useEffect(() => {
   };
 
   const addCourseFromSearch = (searchResult, selectedSections) => {
-  if (selectedSections.length === 0) return;
+    if (selectedSections.length === 0) return;
 
-  const grouped = {
-    L: [],
-    T: [],
-    P: []
-  };
+    const grouped = {
+      L: [],
+      T: [],
+      P: []
+    };
 
-  // Group by stat
-  selectedSections.forEach(section => {
-    if (grouped[section.stat]) {
-      grouped[section.stat].push(section);
-    }
-  });
-
-  const courseEntries = [];
-
-  Object.entries(grouped).forEach(([stat, sections]) => {
-    if (sections.length === 0) return;
-
-    const statLabel = stat === 'L' ? 'Lecture' : stat === 'T' ? 'Tutorial' : 'Practical';
-
-    courseEntries.push({
-      id: Date.now() + Math.random(), // unique ID
-      code: `${searchResult.course_no} (${statLabel})`,
-      title: searchResult.course_title,
-      slots: sections.map(sec => parseDaysHours(sec.days_hr)), // each section is a slot option
-      sections: sections // keep reference
+    // Group by stat
+    selectedSections.forEach(section => {
+      if (grouped[section.stat]) {
+        grouped[section.stat].push(section);
+      }
     });
-  });
 
-  setCourses(prev => [...prev, ...courseEntries]);
-  setShowCourseSearch(false);
-  setSearchQuery('');
-  setSearchResults([]);
-};
+    const courseEntries = [];
 
+    Object.entries(grouped).forEach(([stat, sections]) => {
+      if (sections.length === 0) return;
 
+      const statLabel = stat === 'L' ? 'Lecture' : stat === 'T' ? 'Tutorial' : 'Practical';
+
+      courseEntries.push({
+        id: Date.now() + Math.random(), // unique ID
+        code: `${searchResult.course_no} (${statLabel})`,
+        title: searchResult.course_title,
+        slots: sections.map(sec => parseDaysHours(sec.days_hr)), // each section is a slot option
+        sections: sections // keep reference
+      });
+    });
+
+    setCourses(prev => [...prev, ...courseEntries]);
+    setShowCourseSearch(false);
+    setSearchQuery('');
+    setSearchResults([]);
+  };
 
   const CourseSearchModal = () => {
     const [selectedSections, setSelectedSections] = useState({});
@@ -187,7 +184,6 @@ useEffect(() => {
         [sectionKey]: prev[sectionKey] ? null : section
       }));
     };
-
 
     const getSelectedSectionsForCourse = (courseKey) => {
       return Object.entries(selectedSections)
@@ -455,13 +451,25 @@ useEffect(() => {
 
   const generateTimetables = () => {
     const coursesToGenerate = courses.filter(course => selectedCourses.has(course.id));
-    if (coursesToGenerate.length === 0) return;
+    if (coursesToGenerate.length === 0) {
+      console.log("No courses selected");
+      return;
+    }
 
+    console.log("Generating timetables for courses:", coursesToGenerate);
+
+    // Fixed recursive function
     const generateCombinations = (courseIndex, currentTimetable) => {
-      if (courseIndex === coursesToGenerate.length) {
+      // Base case: we've assigned all courses
+      if (courseIndex >= coursesToGenerate.length) {
         return [currentTimetable];
       }
-      for (let slotOption of course.slots) {
+
+      const currentCourse = coursesToGenerate[courseIndex];
+      const validTimetables = [];
+
+      // Try each slot option for the current course
+      for (let slotOption of currentCourse.slots) {
         let hasConflictWithCurrent = false;
         
         // Check if this slot option conflicts with current timetable
@@ -475,8 +483,9 @@ useEffect(() => {
           if (hasConflictWithCurrent) break;
         }
 
+        // If no conflict, add this course with this slot option and continue
         if (!hasConflictWithCurrent) {
-          const newTimetable = [...currentTimetable, { course, slots: slotOption }];
+          const newTimetable = [...currentTimetable, { course: currentCourse, slots: slotOption }];
           const furtherTimetables = generateCombinations(courseIndex + 1, newTimetable);
           validTimetables.push(...furtherTimetables);
         }
@@ -485,8 +494,18 @@ useEffect(() => {
       return validTimetables;
     };
 
-    const allTimetables = generateCombinations(0, []);
-    setGeneratedTimetables(allTimetables.slice(0, 10)); // Limit to 10 timetables
+    try {
+      const allTimetables = generateCombinations(0, []);
+      console.log("Generated timetables:", allTimetables);
+      setGeneratedTimetables(allTimetables.slice(0, 10)); // Limit to 10 timetables
+      
+      if (allTimetables.length === 0) {
+        alert("No valid timetables found. There may be conflicts between the selected courses.");
+      }
+    } catch (error) {
+      console.error("Error generating timetables:", error);
+      alert("Error generating timetables. Please check the console for details.");
+    }
   };
 
   const formatSlotString = (slots) => {
