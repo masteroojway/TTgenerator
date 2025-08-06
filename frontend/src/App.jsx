@@ -113,21 +113,22 @@ useEffect(() => {
     const parts = daysHr.trim().split(/\s+/);
     const slots = [];
     let currentDays = [];
-    
+
     for (let part of parts) {
       const dayIndex = getDayIndex(part);
       if (dayIndex !== -1) {
-        currentDays.push(dayIndex);
+        // New day encountered, reset currentDays
+        currentDays = [dayIndex];
       } else {
         const hour = parseInt(part);
-        if (!isNaN(hour)) {
+        if (!isNaN(hour) && currentDays.length > 0) {
           currentDays.forEach(day => {
             slots.push({ day, hour });
           });
         }
       }
     }
-    
+
     return slots;
   };
 
