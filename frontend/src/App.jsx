@@ -900,6 +900,28 @@ const TimetableGenerator = () => {
             }
           </div>
         )}
+
+        {/* No Timetables Possible Message */}
+        {generatedTimetables.length === 0 && selectedCourses.size > 0 && (
+          <div className="mt-8 bg-red-50 border border-red-200 rounded-xl p-6">
+            <div className="text-center">
+              <div className="text-red-600 text-xl font-semibold mb-2">
+                No Valid Timetables Found
+              </div>
+              <p className="text-red-700 mb-4">
+                The selected courses have conflicting time slots. No possible timetable combinations exist.
+              </p>
+              <div className="text-sm text-red-600">
+                <p className="mb-2">Suggestions:</p>
+                <ul className="list-disc list-inside space-y-1">
+                  <li>Remove some courses and try again</li>
+                  <li>Check if courses have alternative time slot options</li>
+                  <li>Verify that the time slots are entered correctly</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
       
       <CourseSearchModal />
