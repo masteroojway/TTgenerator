@@ -109,26 +109,32 @@ useEffect(() => {
   };
 
   const parseDaysHours = (daysHr) => {
-    // Parse strings like "M W 2", "T TH 2", "F 2", "M 2 3"
+    // Parse strings like "M W 4 5 F 10" and assign clumps of numbers to clumps of days
     const parts = daysHr.trim().split(/\s+/);
     const slots = [];
-    let currentDays = [];
-
-    for (let part of parts) {
-      const dayIndex = getDayIndex(part);
-      if (dayIndex !== -1) {
-        // New day encountered, reset currentDays
-        currentDays = [dayIndex];
-      } else {
-        const hour = parseInt(part);
-        if (!isNaN(hour) && currentDays.length > 0) {
-          currentDays.forEach(day => {
+    let i = 0;
+    while (i < parts.length) {
+      // Collect days clump
+      let days = [];
+      while (i < parts.length && getDayIndex(parts[i]) !== -1) {
+        days.push(getDayIndex(parts[i]));
+        i++;
+      }
+      // Collect numbers clump
+      let hours = [];
+      while (i < parts.length && (getDayIndex(parts[i]) === -1) && !isNaN(parseInt(parts[i])) && parts[i] !== "") {
+        hours.push(parseInt(parts[i]));
+        i++;
+      }
+      // Assign all hours to all days
+      if (days.length > 0 && hours.length > 0) {
+        days.forEach(day => {
+          hours.forEach(hour => {
             slots.push({ day, hour });
           });
-        }
+        });
       }
     }
-
     return slots;
   };
 
@@ -455,10 +461,6 @@ useEffect(() => {
       if (courseIndex === coursesToGenerate.length) {
         return [currentTimetable];
       }
-
-      const course = coursesToGenerate[courseIndex];
-      const validTimetables = [];
-
       for (let slotOption of course.slots) {
         let hasConflictWithCurrent = false;
         
